@@ -1,26 +1,32 @@
 #!/bin/bash
-# Update the package index
+# 1. Update system and install basic dependencies
 sudo apt-get update -y
+sudo apt-get install -y gnupg software-properties-common curl unzip
 
-# Install Java (Jenkins requirement)
-sudo apt-get install -y openjdk-11-jdk-headless
+# 2. Install Java 17 (Required for modern Jenkins)
+sudo apt-get install -y openjdk-17-jdk-headless
 
-# Add Jenkins Repository and Key
+# 3. Add Jenkins Repository and Install Jenkins
 sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
   https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
 echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
   https://pkg.jenkins.io/debian-stable binary/" | sudo tee \
   /etc/apt/sources.list.d/jenkins.list > /dev/null
 
-# Install Jenkins
 sudo apt-get update -y
 sudo apt-get install -y jenkins
 
-# Install Terraform (Fixed for 64-bit architecture)
-sudo apt-get install -y unzip
-wget https://releases.hashicorp.com/terraform/1.6.5/terraform_1.6.5_linux_amd64.zip
-unzip terraform_1.6.5_linux_amd64.zip
-sudo mv terraform /usr/local/bin/
+# 4. Add HashiCorp Repository and Install Latest Terraform
+wget -O- https://apt.releases.hashicorp.com/gpg | \
+  sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
 
-# Clean up
-rm terraform_1.6.5_linux_amd64.zip
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
+  https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
+  sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+sudo apt-get update -y
+sudo apt-get install -y terraform
+
+# 5. Enable and Start Services
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
